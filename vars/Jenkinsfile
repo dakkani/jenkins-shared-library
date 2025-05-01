@@ -1,0 +1,33 @@
+// Jenkinsfile
+@Library('pipeline-steps@main') _ // Replace 'pipeline-steps' with the name you gave your library
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Maven Build') {
+            steps {
+                mavenBuild pomFile: 'my-project/pom.xml', goals: 'package -DskipTests'
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                dockerBuild imageName: 'my-app:latest', dockerfile: 'my-project/Dockerfile', buildArgs: 'VERSION=1.0'
+            }
+        }
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    script {
+                        dockerPush imageName: 'my-repo/my-app:latest'
+                    }
+                }
+            }
+        }
+    }
+}
